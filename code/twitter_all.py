@@ -235,18 +235,18 @@ def make_twitter_request(twitter_api_func, max_errors=10, *args, **kw):
 	while True:
 		try:
 			return twitter_api_func(*args, **kw)
-		except (twitter.api.TwitterHTTPError, e):
+		except twitter.api.TwitterHTTPError, e:
 			error_count = 0
 			wait_period = handle_twitter_http_error(e, wait_period)
 			if wait_period is None:
 				return
-		except (URLError, e):
+		except URLError, e:
 			error_count += 1
 			print >> sys.stderr, "URLError encountered. Continuing."
 			if error_count > max_errors:
 				print >> sys.stderr, "Too many consecutive errors...bailing out."
 				raise
-		except (BadStatusLine, e):
+		except BadStatusLine, e:
 			error_count += 1
 			print >> sys.stderr, "BadStatusLine encountered. Continuing."
 			if error_count > max_errors:
@@ -268,7 +268,7 @@ if not(account_header is None):
 #list which helps creates dictionary for database to avoid null problem
 info_check_list = ['search_email', 'u_name', 'profile_id', 'screen_name', 'name', 'location', 'description', 'profile_img', 'background_img', 'url', 'followers_count', 'friends_count', 'statuses_count', 'listed_count', 'favourites_count', 'lang', 'geo_enabled', 'notifications', 'contributors_enabled', 'protected', 'created_at']
 #scrap json
-search_email='wildanglepro@gmail.com'
+#search_email
 u_name = results.keys()[0]
 #u_name = u_name[0]
 other_keys= results[u_name].keys()
@@ -316,18 +316,22 @@ try:
 	print "[+]DB connected"
 	cur = con.cursor()
 
-	"""add_info = ("INSERT INTO twitter_info_twitter_info "
+	"""add_info = ("INSERT INTO twitter_scrap_general "
 		    "(email, username, profile_id, screen_name, name, location, description, profile_img, background_img, url, followers_count, friends_count, statuses_count, listed_count, favourites_count, lang, geo_enabled, notifications, contributors_enabled, protected, created_at)"
 		    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")"""
-	add_info = ("INSERT INTO twitter_info_twitter_info "
+	add_info = ("INSERT INTO twitter_scrap_general "
 		    "(email, username, profile_id, screen_name, name, location, description, profile_img, background_img, url, followers_count, friends_count, statuses_count, listed_count, favourites_count, lang, geo_enabled, notifications, contributors_enabled, protected, created_at)"
 		    "VALUES (%(search_email)s,%(u_name)s,%(profile_id)s,%(screen_name)s,%(name)s,%(location)s,%(description)s,%(profile_img)s,%(background_img)s,%(url)s,%(followers_count)s,%(friends_count)s,%(statuses_count)s,%(listed_count)s,%(favourites_count)s,%(lang)s,%(geo_enabled)s,%(notifications)s,%(contributors_enabled)s,%(protected)s,%(created_at)s)")
-
+	
+	"""add_info = ("INSERT INTO twitter_scrap_general "
+		    "(username, profile_id, screen_name, name, location, description, profile_img, background_img, url, followers_count, friends_count, statuses_count, listed_count, favourites_count, lang, geo_enabled, notifications, contributors_enabled, protected, created_at)"
+		    "VALUES (%(u_name)s,%(profile_id)s,%(screen_name)s,%(name)s,%(location)s,%(description)s,%(profile_img)s,%(background_img)s,%(url)s,%(followers_count)s,%(friends_count)s,%(statuses_count)s,%(listed_count)s,%(favourites_count)s,%(lang)s,%(geo_enabled)s,%(notifications)s,%(contributors_enabled)s,%(protected)s,%(created_at)s)")
+	"""
 	cur.execute(add_info, di)
 	con.commit()
 	print "[+] Data added"
     
-except (mdb.Error, e):
+except mdb.Error, e:
   
 	print "Error %d: %s" % (e.args[0],e.args[1])
 	sys.exit(1)
