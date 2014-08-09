@@ -110,7 +110,7 @@ def fb_download_photos(url_list, user):
 	count = 1
 	for item in url_list:
 		#os.system("wget -U firefox "+item)
-		f = open(str(count)+"jpg.", "wb")
+		f = open(str(count)+".jpg", "wb")
 		f.write(urllib.urlopen(item).read())
 		f.close()
 		count +=1
