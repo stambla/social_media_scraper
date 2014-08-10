@@ -135,16 +135,31 @@ def create_dic(frist_list, second_list):
 		di[variable_list[i]] = values_li[i]
 	return di
 #========================================================================
+#create payload folder for FB
+def create_output_dir(usr):
+	new_dir = '/root/thesis/Social_Media_Scraper/dev/code/fb/'+usr	
+	print "[+]Creating payload dir for " + usr	
+	os.mkdir(new_dir)
+	return new_dir
+#========================================================================
+#save file
+def save_file(path, file_name, file_to_save):
+	#os.chdir(nowy_dir)
+	f = open(path+"/"+file_name, "wb")
+	f.write(file_to_save)
+	f.close()
+#========================================================================
 #FB photos
-def fb_download_photos(url_list, user):
-	nowy_dir = '/root/thesis/Social_Media_Scraper/dev/code/fb/'+user	
+def fb_download_photos(url_list, user, path):
+	"""nowy_dir = '/root/thesis/Social_Media_Scraper/dev/code/fb/'+user	
 	#print "[+]Creating new folder"	
 	os.mkdir(nowy_dir)
 	os.chdir(nowy_dir)
+	"""	
 	count = 1
 	for item in url_list:
 		#os.system("wget -U firefox "+item)
-		f = open(str(count)+".jpg", "wb")
+		f = open(path + str(count)+".jpg", "wb")
 		f.write(urllib.urlopen(item).read())
 		f.close()
 		count +=1

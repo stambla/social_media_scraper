@@ -9,6 +9,7 @@ import random
 from selenium.webdriver.common.action_chains import Keys
 from selenium.common.exceptions import NoSuchElementException
 import re
+import json
 
 user_email = str(sys.argv[1])
 #user = str(sys.argv[1])
@@ -17,10 +18,11 @@ br.get('http://facebook.com/')
 print "[+]Login to Facebook"
 email, psswd = scraper_tools.login_credits()
 scraper_tools.fb_login(br, email, psswd)
-user = scraper_tools.fb_search(br, user_email)
+user, profile_id, name_displayed = scraper_tools.fb_search(br, user_email)
 if user is None:
 	br.close()
 	sys.exit()
+print "[+]user :", user, "\n[+]user id: ",profile_id, "\n[+]Name Displayed :", name_displayed
 #==============================================================
 def scrolling_continue(br):
 	body = br.find_element_by_tag_name('body')
@@ -79,7 +81,7 @@ def get_photos(br):
 	
 	print "[+]all links ", len(photo_list)#,photo_list
 	print "[+] Downloading photos"
-	scraper_tools.fb_download_photos(photo_list, user)
+	scraper_tools.fb_download_photos(photo_list, user, path)
 	
 #===============================================================
 def scrolling(br):
@@ -386,6 +388,100 @@ def fb_name(some_str):
          
 	return some_str.replace(" ", "-")
 #=============================================================
+#general user website
+#takes displayed name and profile id
+br.get("https://www.facebook.com/people/"+name_displayed+"/"+profile_id)
+#to scrap user's containers
+#scroll to the bottom of page to get all activty containers
+time.sleep(2)
+scrolling_continue(br)
+time.sleep(5)
+#create dir for payload
+usr = br.title
+path = scraper_tools.create_output_dir(name_displayed)
+#all besides first one
+general_divs = br.find_elements_by_xpath('//div[contains(@class, "_70l")]')
+#print general informations
+for general_info in range (1, len(general_divs)):
+	info = general_divs[general_info].text
+	print info
+
+about = general_divs[2]
+details =about.parent.find_element_by_xpath('//div[1]').text.split('\n')
+#print details
+
+#timeline
+for d in range(0, len(details)):
+	if not (details[d].find('DO YOU') == -1):
+		timeline = details[d+2:details.index('See More Recent Stories')]
+	#if not (details[d].find('See More Recent Stories') == -1):
+
+#print timeline		
+"""
+>>> for i in range(1,len(timeline)):
+...     if not (timeline[i].find('St Stambla')== - 1):
+...             print i
+"""
+#creating json file from timeline activites
+indexes=[]
+
+for i in range(1,len(timeline)):
+	if not (timeline[i].find(usr)== - 1):
+		indexes.append(i)
+
+activities=[]
+activities.append(timeline[: indexes[0]])
+for i in range(0, len(indexes)-1):
+	activities.append(timeline[indexes[i]: indexes[i +1]])
+activities.append(timeline[indexes[-1]:])
+
+tln_json = json.dumps([dict(actvity=a) for a in activities])
+#print tln_json
+scraper_tools.save_file(path, name_displayed+"_tln.json", tln_json)
+"""
+"ne\nAbout\nPhotos\nFriends\nMore\nDO YOU KNOW PEDRO?\nTo see what he shares with
+ friends, send him a friend request.\nPedro Mend's shared a link via R\xe1dio It
+atiaia.\nJuly 24\nAtl\xe9tico levanta terceiro trof\xe9u no Novo Mineir\xe3o\nww
+w.itatiaia.com.br\nGalo j\xe1 tinha conquistado o Campeonato Mineiro e a Copa Li
+bertadores em 2013 e, agora, venceu a Recopa Sul-Americana\nLike\nLike \xb7 Shar
+e\nPedro Mend's\nJuly 23 via Globo.com\nAcompanhe ao vivo o jogo Atl\xe9tico-MG
+x Lan\xfas - Recopa Sul-Americana no globoesporte.com\ngloboesporte.globo.com\nE
+ntre para a torcida e confira placar, lances, v\xeddeos, fotos e a tabela ao viv
+o no Tempo Real do globoesporte.com\nLike\nLike \xb7 Share\nPedro Mend's\nJuly 2
+2\nSempre que brigou comigo\nPra eu n\xe3o correr perigo\nUm her\xf3i pronto pra
+ me salvar\nE com voc\xea eu aprendi todas li\xe7\xf5es\nEu enfrentei os meus dr
+ag\xf5es\nE s\xf3 depois me deixou voar \u266a \u2014 listening to LUCAS LUCCO -
+ 11 Vidas.\nSee Translation\nLUCAS LUCCO - 11 Vidas\nMusician/Band\nPRA QUEM ADM
+IRA A CARREIRA DE LUCAS LUCCO ESSA E A PAGINA PERFEITA\nLike\nLike \xb7 Share\nI
+saabelaa Ferreira likes this.\nPedro Mend's shared a link via Neymar.\nJuly 21\n
+DIVULGADO ESC\xc2NDALO COPA\nwww.fod4.net\nLike\nLike \xb7 Share\nSee More Recen
+t Stories\nFRIENDS \xb7 1,116\nBruno Sim\xf5es\nL\xfa\xfah Teiixeiira\nSara Lima
+\nKim Trident\nAdriana Ramos\nTeety Vedovetto\nMariana Ferreira\nCoe Thamilly Ba
+scellos\nSabrina Paes\nABOUT\nLives in Nova Vi\xe7osa\nFrom Belo Horizonte, Braz
+il\nFollowed by 35 people\nPHOTOS\nSPORTS \xb7 6\nChicago Bulls\nCristiano Ronal
+do\nTorcida Organizada Gal...\nClube Atl\xe9tico Mineiro\nTorcida Organizada Gal
+...\nGALO DOIDO - Fan Page\nChat"
+"""
+
+
+
+
+"""
+u'DO YOU KNOW PEDRO?'
+u'FRIENDS \xb7 1,116'
+u'ABOUT'
+u'PHOTOS'
+u'SPORTS \xb7 6'
+u'MUSIC \xb7 64'
+u'BOOKS \xb7 5'
+u'APPS AND GAMES \xb7 13'
+u'LIKES \xb7 562'
+u'GROUPS \xb7 10'
+u'REVIEWS \xb7 4'
+u'RECENT ACTIVITY'
+divs = br.find_elements_by_xpath('//div[contains(@class, "_70l")]')
+"""
+"""
 #br.get("https://www.facebook.com/"+user+"/photos")
 #time.sleep(10)
 get_photos(br)
@@ -407,28 +503,5 @@ for value in action_li:
 		None
 
 #get_timeline(br)
-#general user website
-#takes displayed name and profile id
-source=br.page_source
-m=re.search('profile_id=(.*)&', source)
-profile_id=m.group(1)
-profile_id = profile_id[:profile_id.index('&')]
-name_displayed = fb_name(br.title)
-br.get("https://www.facebook.com/people/"+name_displayed+"/"+profile_id)
-#to scrap user's containers
-#all besides first one
 """
-u'DO YOU KNOW PEDRO?'
-u'FRIENDS \xb7 1,116'
-u'ABOUT'
-u'PHOTOS'
-u'SPORTS \xb7 6'
-u'MUSIC \xb7 64'
-u'BOOKS \xb7 5'
-u'APPS AND GAMES \xb7 13'
-u'LIKES \xb7 562'
-u'GROUPS \xb7 10'
-u'REVIEWS \xb7 4'
-u'RECENT ACTIVITY'
-divs = br.find_elements_by_xpath('//div[contains(@class, "_70l")]')
-"""
+#br.close()
