@@ -8,6 +8,7 @@ import os
 import random
 from selenium.webdriver.common.action_chains import Keys
 from selenium.common.exceptions import NoSuchElementException
+import re
 
 user_email = str(sys.argv[1])
 #user = str(sys.argv[1])
@@ -17,6 +18,9 @@ print "[+]Login to Facebook"
 email, psswd = scraper_tools.login_credits()
 scraper_tools.fb_login(br, email, psswd)
 user = scraper_tools.fb_search(br, user_email)
+if user is None:
+	br.close()
+	sys.exit()
 #==============================================================
 def scrolling_continue(br):
 	body = br.find_element_by_tag_name('body')
@@ -79,7 +83,8 @@ def get_photos(br):
 	
 #===============================================================
 def scrolling(br):
-	
+	#for subsripbes
+	# "https://www.facebook.com/browse/subscribers/?"+user
 	try:	#'a' class "_3t3" is for all "See More" cases	
 		f_s_m = br.find_element_by_class_name("_3t3")# "See All" element
 		f_s_m.click()
@@ -373,6 +378,14 @@ def perform_action(br, value):
 		get_places(br)
 
 #=============================================================
+def fb_name(some_str):
+	"""Takes string, replace apostrophe with blank, and space with hyphen"""
+	if not (some_str.find("'")==-1):
+		print"[+]Dumping apostrophe"
+	        some_str.replace("'", "")
+         
+	return some_str.replace(" ", "-")
+#=============================================================
 #br.get("https://www.facebook.com/"+user+"/photos")
 #time.sleep(10)
 get_photos(br)
@@ -393,4 +406,29 @@ for value in action_li:
 	except:
 		None
 
-get_timeline(br)
+#get_timeline(br)
+#general user website
+#takes displayed name and profile id
+source=br.page_source
+m=re.search('profile_id=(.*)&', source)
+profile_id=m.group(1)
+profile_id = profile_id[:profile_id.index('&')]
+name_displayed = fb_name(br.title)
+br.get("https://www.facebook.com/people/"+name_displayed+"/"+profile_id)
+#to scrap user's containers
+#all besides first one
+"""
+u'DO YOU KNOW PEDRO?'
+u'FRIENDS \xb7 1,116'
+u'ABOUT'
+u'PHOTOS'
+u'SPORTS \xb7 6'
+u'MUSIC \xb7 64'
+u'BOOKS \xb7 5'
+u'APPS AND GAMES \xb7 13'
+u'LIKES \xb7 562'
+u'GROUPS \xb7 10'
+u'REVIEWS \xb7 4'
+u'RECENT ACTIVITY'
+divs = br.find_elements_by_xpath('//div[contains(@class, "_70l")]')
+"""
