@@ -5,6 +5,7 @@ import urllib
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 import time
+import re
 
 def login_credits():
 	login_info = open("thesis.txt").read()
@@ -46,8 +47,28 @@ def fb_login(webdriver, email, psswd):
 	sign_in_button = webdriver.find_element_by_id('u_0_n')
 	sign_in_button.click()
 
+def get_id(br):
+	"""Takes webdriver and returns the user FB id from html source code"""
+	source=br.page_source
+	m=re.search('profile_id=(.*)&', source)
+	profile_id=m.group(1)
+	profile_id = profile_id[:profile_id.index('&')]
+	return profile_id
+
+
+def fb_name(some_str):
+	"""Takes string, replace apostrophe with blank, and space with hyphen"""
+	if not (some_str.find("'")==-1):
+		print"[+]Dumping apostrophe"
+	        some_str.replace("'", "")
+         
+	return some_str.replace(" ", "-")
+
+
 def fb_search(br, search_email):
 	email, psswd = login_credits()
+	user_id = None
+	name_displayed = None
 	print"[+]Connecting to FaceBook"
 	br = webdriver.Firefox()
 	#run with phanthom js
@@ -66,23 +87,36 @@ def fb_search(br, search_email):
 	username = br.current_url
 	if not (username.find('?')== -1):
 		if not (username.find('=') == -1):
-			print"[+]User not got assigned username. ID used instead"
+			
 			#username_post = username[username.index('=')+3:username.index('&')]
-			if not (username.find('&') == -1):
+			if not (username.find('%40') == -1):
+				print "[+]User not on FaceBook!!!!"				
+				username_post = None
+
+			elif not (username.find('&') == -1):
+				print"[+]User not got assigned username. ID used instead"
 				username_post = username[username.index('=')+1:username.index('&')]
+				user_id = get_id(br)
+				name_displayed = fb_name(br.title)
 			else:
+				print"[+]User not got assigned username. ID used instead"
 				username_post = username[username.index('=')+1:]
+				user_id = get_id(br)
+				name_displayed = fb_name(br.title)
 		else:
 			username_post = username[username.index('m')+2:username.index('?')]
+			user_id = get_id(br)
+			name_displayed = fb_name(br.title)
 	else:
 		username_post = username[username.index('m')+2:]
-	
+		user_id = get_id(br)
+		name_displayed = fb_name(br.title)
+
 	br.close()
-	if username_post == 'search/web/':
-		username_post = None
+
 	print"[+]Email ", search_email, " mapped to ", username_post, " username"
 	
-	return username_post
+	return username_post , user_id, name_displayed
 #========================================================================
 #prepare for db insertion
 def blanks_list(variable_list):
